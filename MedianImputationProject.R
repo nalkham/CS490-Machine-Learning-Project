@@ -23,8 +23,19 @@ housingData[is.na(housingData$total_bedrooms), "total_bedrooms"] <- medBedrooms
 
 median(housingData$total_bedrooms)
 ##calculated median w/o NA's, then replaced NA's with said value
+write.csv(housingData, file = "MedianImputedHousingData.csv")
 
-attach(housingData)
+set.seed(1)
+splitVal <- sample(c(rep(0,0.7 * nrow(housingData)),
+                   rep(1,0.3 * nrow(housingData))))
+
+table(splitVal)
+trainingData <- housingData[splitVal ==0, ]
+testingData <- housingData[splitVal ==1, ]
+
+head(trainingData)
+
+attach(trainingData)
 
 hist(median_house_value, breaks = 18)
 
@@ -53,13 +64,45 @@ plot(total_rooms, median_house_value)
 plot(total_bedrooms, median_house_value)
 plot(median_income, median_house_value)
 
+SimpleValueModel <- lm(median_house_value ~ median_income, data = df[trainingData, ])
+summary(SimpleValueModel)
+abline(SimpleValueModel, col=2, lwd=3)
+confint(SimpleValueModel, level=0.99)
 
-valueModel <- lm(median_house_value ~ median_income + total_rooms + housing_median_age)
+valueModel <- lm(median_house_value ~ median_income + total_rooms + housing_median_age + total_bedrooms + households)
 summary(valueModel)
+abline(valueModel, col=3, lwd=3)
+confint(valueModel, level=0.99)
+
+AllDataModel <- lm(median_house_value ~ longitude + latitude + housing_median_age + total_rooms + total_bedrooms + population + households + median_income + ocean_proximity)
+summary(AllDataModel)
+abline(AllDataModel, col=5, lwd=3)
+confint(AllDataModel, level=0.99)
 
 
+#simple Regression on Test Set
+predictedAmountSimple <- predict(SimpleValueModel, testingData)
+testingData["Predicted Amount Simple"] <- predictedAmountSimple
+
+plot(testingData$`Predicted Amount Simple`,testingData$median_house_value, xlab = "Actual Amt Spent",
+     ylab = "Predicted Amt Spent", main = "Simplistic Model")
+abline(lm(testingData$`Predicted Amount Simple` ~ testingData$median_house_value), col = 2)
 
 
+#Highest R values Regression on Test Set
+predictedAmount <- predict(valueModel, testingData)
+testingData["Predicted Amount"] <- predictedAmount
+
+plot(testingData$`Predicted Amount`,testingData$median_house_value, xlab = "Actual Amt Spent",
+     ylab = "Predicted Amt Spent", main = "Large R-squared Model")
+abline(lm(testingData$`Predicted Amount` ~ testingData$median_house_value), col = 2)
 
 
+#All values Regression on Test Set
+ComplexpredictedAmount <- predict(AllDataModel, testingData)
+testingData["Complex Predicted Amount"] <- ComplexpredictedAmount
+
+plot(testingData$`Predicted Amount`,testingData$median_house_value, xlab = "Actual Amt Spent",
+     ylab = "Predicted Amt Spent", main = "Complex Model")
+abline(lm(testingData$`Predicted Amount` ~ testingData$median_house_value), col = 2)
 
