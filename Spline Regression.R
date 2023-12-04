@@ -68,32 +68,16 @@ lm(median_house_value ~ longitude + latitude + median_income,
    data=knn.reg.edit)
 
 
-#spline regression model code attempt 1
-#training.samples <-med.reg.edit$median_house_value %>%
-#  createDataPartition(p = 0.9, list = FALSE)
-#spline_train.data <- med.reg.edit[training.samples,]
-#spline_test.data <- med.reg.edit[-training.samples,]
-
-#knots <- quantile(spline_train.data$median_income, p = c(0.25, 0.5, 0.75))
-#model <- lm (median_house_value ~ bs(median_income, knots = knots), data = spline_train.data)
-#predictions <- model %>% predict(spline_test.data)
-#data.frame(
-#  RMSE = RMSE(predictions, spline_test.data$median_house_value),
-#  R2 = R2(predictions, spline_test.data$median_house_value)
-#)
-
-#ggplot(spline_test.data, aes(median_income, median_house_value) ) +
-#  geom_point() +
-#  stat_smooth(method = lm, formula = y ~ splines::bs(x, df = 3))
 
 #spline Regression attempt 2
 
 hyper_grid <- expand.grid(degree = 3:7,
                           nprune = seq(2, 50, length.out = 10) %>%
                             floor())
+
 #fit MARS model using cross-validation
 cv_mars <- train(
-  median_house_value ~., data=na.omit(housing),
+  median_house_value ~., data=imput[["data"]][[1]],
   method = "earth",
   metric = "RMSE",
   trControl = trainControl(method = "cv", number = 10),
@@ -103,9 +87,21 @@ cv_mars <- train(
 cv_mars$results %>%
   filter(nprune==cv_mars$bestTune$nprune, degree ==cv_mars$bestTune$degree)
 
+cv_mars$results
+
+
 print(cv_mars)
 
 ggplot(cv_mars)
 
-train(median_house_value ~., data=na.omit(housing), method="leapBackward",
-      tuneGrid=data.frame(nvmax = 1:9), trControl=train.size)
+predictions<-predict(cv_mars, newdata = imput[["data"]][[1]])
+
+plot(x=predictions, y = imput[["data"]][[1]]$median_house_value,
+     xlab='Predicted Values',
+     ylab='Actual Values',
+     main='Predicted vs. Actual Values')
+x1 = c(1,100,1000,1000000)
+y1 = c(1,100,1000,1000000)
+lines(x1,y1, col = 'red')
+
+
