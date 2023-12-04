@@ -10,6 +10,11 @@ library(listenv)
 library(caret) #from sthda.com tutorial
 library(leaps) #from sthda.com tutorial
 library(splines) #for spline regression
+library(ISLR)      
+library(dplyr)     
+library(ggplot2)   
+install.packages('earth')
+library(earth)
 
 set.seed(513)
 housing <- read.csv("housing.csv") #base data
@@ -64,33 +69,29 @@ lm(median_house_value ~ longitude + latitude + median_income,
 
 
 #spline regression model code attempt 1
-training.samples <-med.reg.edit$median_house_value %>%
-  createDataPartition(p = 0.9, list = FALSE)
-spline_train.data <- med.reg.edit[training.samples,]
-spline_test.data <- med.reg.edit[-training.samples,]
+#training.samples <-med.reg.edit$median_house_value %>%
+#  createDataPartition(p = 0.9, list = FALSE)
+#spline_train.data <- med.reg.edit[training.samples,]
+#spline_test.data <- med.reg.edit[-training.samples,]
 
-knots <- quantile(spline_train.data$median_income, p = c(0.25, 0.5, 0.75))
-model <- lm (median_house_value ~ bs(median_income, knots = knots), data = spline_train.data)
-predictions <- model %>% predict(spline_test.data)
-data.frame(
-  RMSE = RMSE(predictions, spline_test.data$median_house_value),
-  R2 = R2(predictions, spline_test.data$median_house_value)
-)
+#knots <- quantile(spline_train.data$median_income, p = c(0.25, 0.5, 0.75))
+#model <- lm (median_house_value ~ bs(median_income, knots = knots), data = spline_train.data)
+#predictions <- model %>% predict(spline_test.data)
+#data.frame(
+#  RMSE = RMSE(predictions, spline_test.data$median_house_value),
+#  R2 = R2(predictions, spline_test.data$median_house_value)
+#)
 
-ggplot(spline_test.data, aes(median_income, median_house_value) ) +
-  geom_point() +
-  stat_smooth(method = lm, formula = y ~ splines::bs(x, df = 3))
+#ggplot(spline_test.data, aes(median_income, median_house_value) ) +
+#  geom_point() +
+#  stat_smooth(method = lm, formula = y ~ splines::bs(x, df = 3))
 
 #spline Regression attempt 2
-library(dplyr)     
-library(ggplot2)   
-install.packages('earth')
-library(earth)     
 
 hyper_grid <- expand.grid(degree = 3:7,
                           nprune = seq(2, 50, length.out = 10) %>%
                             floor())
-#fit MARS model using k-fold cross-validation
+#fit MARS model using cross-validation
 cv_mars <- train(
   median_house_value ~., data=na.omit(housing),
   method = "earth",
