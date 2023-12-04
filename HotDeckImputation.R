@@ -31,7 +31,7 @@ hot.step$results
 summary(hot.step$finalModel)
 lm(median_house_value ~ longitude + latitude + median_income,
    data=imput[["data"]][[1]])
-write.matrix(imput[["data"]][[1]], file="HotDeck.csv")
+write.csv(imput[["data"]][[1]], file="HotDeck.csv")
 
 #deterministic regression imputation linear regression using backwards selection
 determ.reg <- read.csv("Deterministic_Regression.csv")
@@ -68,7 +68,7 @@ lm(median_house_value ~ longitude + latitude + median_income,
 
 #KNN imputation linear regression using backwards selection
 knn.reg <- read.csv("housingKNN.csv")
-knn.reg.edit <- subset(knn.reg, select = -1)
+knn.reg.edit <- subset(knn.reg, select = -c(X,total_bedrooms_imp))
 knn.reg.step <- train(median_house_value ~., data=knn.reg.edit, 
                       method="leapBackward", tuneGrid=data.frame(nvmax = 1:9), 
                       trControl=train.size)
